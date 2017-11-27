@@ -1,0 +1,105 @@
+Walkthrough notes
+
+TODO
+- distribution code
+- mashup.db
+- application.py
+    - articles
+    - search
+- scripts.js
+    - configure
+    - addMarker
+    - removeMarkers
+
+SQL, HTML, RSS, JavaScript, Python, Ajax, jQuery, JSON...
+- parse RSS feeds from Google News using Python
+- return articles' titles and links to our web app via Ajax as JSON
+
+
+index.html
+- embedded Google map
+- HTML form
+
+application.py
+- index
+    - API_KEY
+- articles
+    - TODO
+- search
+    - TODO
+- update
+    - finds up to 10 places within view
+- jsonify
+    - from Flask
+
+mashup.db
+- decide appropriate database schema
+- import US.txt into table 'places'
+
+articles
+- geo is submitted to /articles as a GET parameter
+- output JSON array of objects
+    - each object is an article for geo
+
+articles route in application.py
+- request.args.get("geo")
+    - check for missing argument
+    - RuntimeError
+- lookup
+- jsonify
+
+search
+- q is submitted to /search as a GET parameter
+- output JSON array of objects
+    - each object is a row from places
+- value of q might be a city, state, or postal code
+- jsonify
+
+
+scripts.js
+
+configure
+- suggestion: Handlebars.compile(
+                "div" +
+                "TODO" +
+                "</div>"
+              )
+- modify suggestion so that it displays matches
+
+addMarker
+- instantiate marker
+- listen for clicks on the marker
+- get articles for place
+- build list of links to articles
+- remember marker
+
+instantiate marker
+- google.maps.Marker
+
+listen for clicks on the marker
+- google.maps.event.addListener
+
+get articles for places
+- $.getJSON
+
+removeMarker
+- remove all markers from the map and delete them
+- Google Maps API
+
+
+create table query
+
+CREATE TABLE places (
+    country_code varchar(2),
+    postal_code varchar(20),
+    place_name varchar(180),
+    admin_name1 varchar(100),
+    admin_code1 varchar(20),
+    admin_name2 varchar(100),
+    admin_code2 varchar(20),
+    admin_name3 varchar(100),
+    admin_code3 varchar(20),
+    latitude real,
+    longitude real,
+    accuracy integer
+);
