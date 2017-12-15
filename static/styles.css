@@ -59,6 +59,15 @@ html, body, #map-canvas, .container-fluid
     margin-bottom: 0;
 }
 
+/* Styles added for article lists */
+.article-list {
+
+}
+
+.article-list-item {
+    
+}
+
 /* Stylize typeahead.js a la http://twitter.github.io/typeahead.js/css/examples.css */
 .tt-menu
 {

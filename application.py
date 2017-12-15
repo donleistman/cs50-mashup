@@ -1,15 +1,55 @@
 import os
+import sqlalchemy
 import re
 from flask import Flask, jsonify, render_template, request
 
 from cs50 import SQL
 from helpers import lookup
 
+import urllib.parse
+import psycopg2
+urllib.parse.uses_netloc.append("postgres")
+url = urllib.parse.urlparse(os.environ["DATABASE_URL"])
+conn = psycopg2.connect(
+ database=url.path[1:],
+ user=url.username,
+ password=url.password,
+ host=url.hostname,
+ port=url.port
+)
+
 # Configure application
 app = Flask(__name__)
 
 # Configure CS50 Library to use SQLite database
-db = SQL("sqlite:///mashup.db")
+db = SQL(os.environ["DATABASE_URL"])
+
+# added during Heroku tutorial
+class SQL(object):
+    def __init__(self, url):
+        try:
+            self.engine = sqlalchemy.create_engine(url)
+        except Exception as e:
+            raise RuntimeError(e)
+    def execute(self, text, *multiparams, **params):
+        try:
+            statement = sqlalchemy.text(text).bindparams(*multiparams, **params)
+            result = self.engine.execute(str(statement.compile(compile_kwargs={"literal_binds": True})))
+            # SELECT
+            if result.returns_rows:
+                rows = result.fetchall()
+                return [dict(row) for row in rows]
+            # INSERT
+            elif result.lastrowid is not None:
+                return result.lastrowid
+            # DELETE, UPDATE
+            else:
+                return result.rowcount
+        except sqlalchemy.exc.IntegrityError:
+            return None
+        except Exception as e:
+            raise RuntimeError(e)
+# # end
 
 
 # Ensure responses aren't cached
@@ -45,10 +85,8 @@ def articles():
 @app.route("/search")
 def search():
     """Search for places that match query"""
-    q = request.args.get("q") + "%"
-    results = db.execute('''SELECT * FROM places WHERE postal_code LIKE :q
-        OR place_name LIKE :q
-        OR admin_code1 LIKE :q''', q=q)
+    q = request.args.get("q") + "%%"
+    results = db.execute("SELECT * FROM places WHERE postal_code LIKE :q OR place_name LIKE :q OR admin_code1 LIKE :q", q=q)
     return jsonify(results)
 
 
@@ -78,22 +116,18 @@ def update():
     if sw_lng <= ne_lng:
 
         # Doesn't cross the antimeridian
-        rows = db.execute("""SELECT * FROM places
-                          WHERE :sw_lat <= latitude AND latitude <= :ne_lat AND (:sw_lng <= longitude AND longitude <= :ne_lng)
-                          GROUP BY country_code, place_name, admin_code1
-                          ORDER BY RANDOM()
-                          LIMIT 10""",
-                          sw_lat=sw_lat, ne_lat=ne_lat, sw_lng=sw_lng, ne_lng=ne_lng)
+        rows = db.execute("SELECT * FROM places WHERE :sw_lat <= latitude AND latitude <= :ne_lat AND (:sw_lng <= longitude AND longitude <= :ne_lng) GROUP BY country_code, place_name, admin_code1, postal_code, admin_name1, admin_name2, admin_code2, admin_name3, admin_code3, latitude, longitude, accuracy ORDER BY RANDOM() LIMIT 10", sw_lat=sw_lat, ne_lat=ne_lat, sw_lng=sw_lng, ne_lng=ne_lng)
 
     else:
 
         # Crosses the antimeridian
-        rows = db.execute("""SELECT * FROM places
-                          WHERE :sw_lat <= latitude AND latitude <= :ne_lat AND (:sw_lng <= longitude OR longitude <= :ne_lng)
-                          GROUP BY country_code, place_name, admin_code1
-                          ORDER BY RANDOM()
-                          LIMIT 10""",
-                          sw_lat=sw_lat, ne_lat=ne_lat, sw_lng=sw_lng, ne_lng=ne_lng)
+        rows = db.execute("SELECT * FROM places WHERE :sw_lat <= latitude AND latitude <= :ne_lat AND (:sw_lng <= longitude OR longitude <= :ne_lng) GROUP BY country_code, place_name, admin_code1, postal_code, admin_name1, admin_name2, admin_code2, admin_name3, admin_code3, latitude, longitude, accuracy ORDER BY RANDOM() LIMIT 10", sw_lat=sw_lat, ne_lat=ne_lat, sw_lng=sw_lng, ne_lng=ne_lng)
 
     # Output places as JSON
     return jsonify(rows)
+
+
+if __name__ == '__main__':
+ app.debug = True
+ port = int(os.environ.get('PORT', 5000))
+ app.run(host='0.0.0.0', port=port)
