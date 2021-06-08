@@ -24,7 +24,7 @@ lxml==3.8.0
 MarkupSafe==1.0
 olefile==0.44
 pexpect==4.2.1
-Pillow==4.2.1
+Pillow==8.2.0
 psycopg2==2.7.3.2
 ptyprocess==0.5.2
 pycodestyle==2.3.1
